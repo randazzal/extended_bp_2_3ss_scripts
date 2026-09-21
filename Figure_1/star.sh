@@ -1,34 +1,33 @@
 #!/bin/bash
 #SBATCH --job-name=STAR
-#SBATCH -n 24
-#SBATCH --partition=compute
+#SBATCH --cpus-per-task=12
+#SBATCH --partition=gen-mk-compute-1
 #SBATCH --time=72:00:00
 #SBATCH --mem=64G
-#SBATCH --output=/data2/lackey_lab/DownloadedSequenceData/randazza/chick_seq/merged_nova/star.out
-#SBATCH --error=/data2/lackey_lab/DownloadedSequenceData/randazza/chick_seq/merged_nova/star.err
+#SBATCH --array=1-66%5
+#SBATCH --output=logs/star_%A_%a.out
+#SBATCH --error=logs/star_%A_%a.err
 
 # Load software
-cd /data2/lackey_lab/DownloadedSequenceData/randazza/chick_seq/merged_nova/lower_map_align/single_run 
 module load star/2.7.10a
 ml samtools
 
-for i in *_R1_001.fastq.gz; do name=$(basename ${i} _R1_001.fastq.gz);
-STAR --runThreadN 24 --runMode alignReads \
+name=$(sed -n "${SLURM_ARRAY_TASK_ID}p" complete_samples.txt) #complete_samples.txt is list of abbreviated file names
+
+STAR --runThreadN 12 --runMode alignReads \
 --twopassMode Basic \
 --outSAMtype BAM Unsorted \
 --readFilesCommand gunzip -c \
 --genomeDir /data2/lackey_lab/DownloadedSequenceData/randazza/new_chick/star/ \
 --outFileNamePrefix ${name}_ \
---readFilesIn ${name}_R1_001.fastq.gz ${name}_R2_001.fastq.gz \
+--readFilesIn ${name}_clean_R1.fastq.gz ${name}_clean_R2.fastq.gz \
 --outFilterType BySJout \
 --outSAMattributes NH HI AS NM MD jM jI \
---outFilterMultimapNmax 20 \
+--outFilterMultimapNmax 100 \
+--winAnchorMultimapNmax 200 \
 --outFilterMismatchNoverReadLmax 0.04 \
 --outReadsUnmapped Fastx \
 --alignIntronMin 20 \
 --alignIntronMax 1000000 \
 --quantMode TranscriptomeSAM \
---outFilterScoreMinOverLread 0.3 \
---outFilterMatchNminOverLread 0.3 \
---alignSJDBoverhangMin 1 ;
-done
+--alignSJDBoverhangMin 1

@@ -10,7 +10,7 @@ tpms <- read.delim("all_tpms.txt", sep = "\t")
 psi <- read.delim("megacombo_sizelimited.txt", sep = "\t")
 psi1 <- psi[,1]
 psi1 <- as.data.frame(psi1)
-psi2 <- psi[,6:15]
+psi2 <- psi[,7:16]
 psi <- cbind(psi1, psi2)
 heatmap <- psi %>%
   pivot_longer(
@@ -52,11 +52,11 @@ tpm_long <- limited_long %>%
 tpm_summary <- tpm_long %>%
   group_by(IDs, V2, Tissue, Stage) %>%
   summarise(mean_TPM = mean(TPMs, na.rm = TRUE), .groups = "drop")
-colnames(tpm_summary) <- c("IDs", "psi1", "Tissue", "Stage", "mean_TPM")
+colnames(tpm_summary) <- c("psi1", "IDs", "Tissue", "Stage", "mean_TPM")
 combo <- merge(tpm_summary, heatmap, by = c("Tissue", "Stage", "psi1"))
 
 corr_val <- cor(combo$PSI, combo$mean_TPM, 
-                use = "complete.obs", method = "pearson")
+                use = "complete.obs", method = "pearson") #pearson 0.050, spearman 0.018
 combo %>%
   ggplot(aes(x = PSI, y = mean_TPM)) +
   geom_point() +
